@@ -40,6 +40,7 @@ def serialList():
 		except:
 			pass
 	baselist = baselist \
+			   + glob.glob("/dev/ttyS*") \
 			   + glob.glob("/dev/ttyUSB*") \
 			   + glob.glob("/dev/ttyACM*") \
 			   + glob.glob("/dev/ttyAMA*") \
