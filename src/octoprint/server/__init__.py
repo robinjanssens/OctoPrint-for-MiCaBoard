@@ -198,7 +198,7 @@ class Server():
 
 	def _checkForRoot(self):
 		if "geteuid" in dir(os) and os.geteuid() == 0:
-			exit("You should not run OctoPrint as root!")
+			pass
 
 	def _initSettings(self, configfile, basedir):
 		settings(init=True, basedir=basedir, configfile=configfile)
