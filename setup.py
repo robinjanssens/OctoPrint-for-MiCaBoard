@@ -29,7 +29,7 @@ def params():
 		"Topic :: Printing",
 		"Topic :: System :: Networking :: Monitoring"
 	]
-	author = "Gina Häußge"
+	author = "Gina Haubge"
 	author_email = "osd@foosel.net"
 	url = "http://octoprint.org"
 	license = "AGPLv3"
