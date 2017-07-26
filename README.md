@@ -1,5 +1,7 @@
 # Running OctoPrint on the MiCa7688 MEGA
 
+*This Repository is an old version of OctoPrint which is compatible and optimized for the MiCaBoard. If you are looking for the original OctoPrint repository ['Press Here'](https://github.com/foosel/OctoPrint)*
+
 ## Create Overlay
 
 If you want to run OctoPrint you will need more storage than is provided so we need to enlarge the storage space by creating an overlay onto a microSD card. If you already done this you can skip this part.
