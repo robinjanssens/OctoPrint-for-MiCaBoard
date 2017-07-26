@@ -1,86 +1,124 @@
-OctoPrint
-=========
+# Running OctoPrint on the MiCa7688 MEGA
 
-[![Flattr this git repo](http://api.flattr.com/button/flattr-badge-large.png)](https://flattr.com/submit/auto?user_id=foosel&url=https://github.com/foosel/OctoPrint&title=OctoPrint&language=&tags=github&category=software)
+## Create Overlay
 
-OctoPrint provides a responsive web interface for controlling a 3D printer (RepRap, Ultimaker, ...). It is Free Software
-and released under the [GNU Affero General Public License V3](http://www.gnu.org/licenses/agpl.html).
+If you want to run OctoPrint you will need more storage than is provided so we need to enlarge the storage space by creating an overlay onto a microSD card. If you already done this you can skip this part.
 
-Its website can be found at [octoprint.org](http://octoprint.org).
+After inserting the SD card you can check `dmesg` to make sure it is detected correctly. (optional)
 
-Reporting bugs
---------------
+Mount the SD card `mount /dev/mmcblk0p1 /mnt`
 
-OctoPrint's issue tracker can be found [on Github](https://github.com/foosel/OctoPrint/issues). **Before opening a new
-ticket please take a look at [this guide on how to file a bug report with OctoPrint](https://github.com/foosel/OctoPrint/wiki/How-to-file-a-bug-report).**
+Check the mounting by typing `df`<br>
+You should see a line like `/dev/mmcblk0p1   <blocks>   <used>   <available>  <use%> /mnt`
 
-Sending pull requests
----------------------
+copy existing overlay to the mounted SD card `tar -C /overlay -cvf - . | tar -C /mnt -xf -`
 
-Please create all pull requests against the [devel branch](https://github.com/foosel/OctoPrint/tree/devel) of OctoPrint, as that one is used for developing new 
-features and then merged against master when those features are deemed mature enough for general consumption. In case
-of bug fixes I'll take care to cherry pick them against master if the bugs they are fixing are critical.
+Unmount SD card `umount /mnt`
 
-Installation
-------------
+Create fstab<br>
+`block detect > /etc/config/fstab; \
+   sed -i s/option$'\t'enabled$'\t'\'0\'/option$'\t'enabled$'\t'\'1\'/ /etc/config/fstab; \
+   sed -i s#/mnt/mmcblk0p1#/overlay# /etc/config/fstab; \
+   cat /etc/config/fstab;`
 
-Installation instructions for installing from source for different operating systems can be found [on the wiki](https://github.com/foosel/OctoPrint/wiki#assorted-guides).
+Reboot `reboot`
 
-If you want to run OctoPrint on a Raspberry Pi you might want to take a look at [OctoPi](https://github.com/guysoft/OctoPi)
-which is a custom SD card image that includes OctoPrint plus dependencies.
+Now check if the overlay is correctly mounted by typing `df`.<br>
+It should look like this `overlayfs:/overlay   <blocks>   <used>   <available>  <used>% /` with the same values as `/dev/mmcblk0p1   <blocks>   <used>   <available>  <use%> /overlay`.
 
-Dependencies
-------------
+You now have extended the storage capacity of your board.
 
-OctoPrint depends on a couple of python modules to do its job. Those are listed in requirements.txt and can be
-installed using `pip`:
+## Installing OctoPrint
 
-    pip install -r requirements.txt
+We need to install Python first.<br>
+`opkg update`<br>
+`opkg install python python-pip unzip`<br>
+`pip install --upgrade setuptools`
 
-You should also do this after pulling from the repository, since the dependencies might have changed.
+We also need to install the certificate tools to be able to clone or download from github.<br>
+`opkg install ca-bundle ca-certificates`
 
-OctoPrint currently only supports Python 2.7.
+Expand /tmp folder by moving it to the overlay.<br>
+`mkdir /overlay/tmp`<br>
+`rm -rf /overlay/tmp/*`<br>
+`cp -a /tmp/* /overlay/tmp/`<br>
+`umount -l /tmp`<br>
+`[ $? -ne 0 ] && {`<br>
+`umount -l /tmp`<br>
+`}`<br>
+`mount /overlay/tmp/ /tmp`
 
-Usage
------
+Now we are going to download and install OctoPrint.
 
-Just start the server via
+Go to the desired install location. I chose `cd /usr/share`.
 
-    ./run
+Clone this git repo `git clone git@github.com:robinjanssens/OctoPrint-for-MiCaBoard.git`.
 
-By default it binds to all interfaces on port 5000 (so pointing your browser to `http://127.0.0.1:5000`
-will do the trick). If you want to change that, use the additional command line parameters `host` and `port`,
-which accept the host ip to bind to and the numeric port number respectively. If for example you want the server
-to only listen on the local interface on port 8080, the command line would be
+Enter the directory `cd OctoPrint-for-MiCaBoard`.
 
-    ./run --host=127.0.0.1 --port=8080
+Install requirements `pip install -r requirements.txt`.
 
-Alternatively, the host and port on which to bind can be defined via the configuration.
+We need to make the run file executable `chmod 755 ./run`.
 
-If you want to run OctoPrint as a daemon (only supported on Linux), use
+Test OctoPrint `./run`.
 
-    ./run --daemon {start|stop|restart} [--pid PIDFILE]
+OctoPrint is now running on port 5000. Go to you web browser and check if it is running properly.
 
-If you do not supply a custom pidfile location via `--pid PIDFILE`, it will be created at `/tmp/octoprint.pid`.
+## Make OctoPrint run on startup
 
-You can also specify the configfile or the base directory (for basing off the `uploads`, `timelapse` and `logs` folders),
-e.g.:
+Create a symlink 'octoprint' that links to the run script `ln -s /usr/share/OctoPrint-for-MiCaBoard/run /usr/bin/octoprint`.
 
-    ./run --config /path/to/another/config.yaml --basedir /path/to/my/basedir
+You can choose the port to run the OctoPrint web interface on by using the following parameter `--port=8080`. Keep in mind port 80 is already running the connection web interface.
 
-See `run --help` for further information.
+Add OctoPrint to rc.local to start it at startup.
+```
+# Put your custom commands here that should be executed once
+# the system init finished. By default this file does nothing.
 
-Configuration
--------------
+octoprint --port=8080 &
 
-If not specified via the commandline, the configfile `config.yaml` for OctoPrint is expected in the settings folder,
-which is located at `~/.octoprint` on Linux, at `%APPDATA%/OctoPrint` on Windows and
-at `~/Library/Application Support/OctoPrint` on MacOS.
+exit 0
+```
 
-A comprehensive overview of all available configuration settings can be found
-[on the wiki](https://github.com/foosel/OctoPrint/wiki/Configuration).
+To prevent another restart you can run OctoPrint by typing `octoprint --port=8080 &`
 
-Setup on a Raspberry Pi running Raspbian
-----------------------------------------
+## Program the Arduino firmware
 
-A comprehensive setup guide can be found [on the wiki](https://github.com/foosel/OctoPrint/wiki/Setup-on-a-Raspberry-Pi-running-Raspbian).
+First you need to download and configure your firmware e.g.: [Marlin](https://github.com/MarlinFirmware/Marlin).
+
+Add `https://raw.githubusercontent.com/MiCa-boards/MiCa7688_Arduino/master/package_micaboards_index.json` to `File > Preferences > Additional Boards Manager URLs`
+
+Go to `Tools > Board:  > Boards Manager...` at the bottom you will see `MiCa AVR Boards` press "Install".
+
+Now at the bottom of the `Tools > Board:` menu there will be the MiCa Boards listed.
+
+Choose the `MiCa7688 Mega`.
+
+If your board is running on the same network as your computer you will see the IP address appear in the `Tools > Port` menu.
+
+As everything went as planned you can now press `Upload` and flash the firmware over the air.
+
+## Program hex file manually
+
+If OTA programming doesn't work via the Arduino IDE you can program manually via SSH.
+
+Export hex file in arduino<br>
+`File > Preferences > check 'Show verbose output during compilation and upload'`
+
+Compile and look for the path to the hex file in the compilation output.<br>
+On Windows I had something like this
+`C:\Users\<yourname>\AppData\Local\Temp\arduino_build_15087\Marlin.ino.hex`.
+
+Send hex file to MiCa board.<br>
+`scp C:\Users\<yourname>\AppData\Local\Temp\arduino_build_15087\Marlin.ino.hex root@<ipadress>:~/marlin.hex`
+
+Login and program hex file.<br>
+`ssh root@<ipaddress>`<br>
+`/usr/bin/run-avrdude ~/marlin.hex -v -patmega2560 -cstk500v2`
+
+## References
+
+- [https://github.com/foosel/OctoPrint](https://github.com/foosel/OctoPrint)
+- [https://github.com/MiCa-boards](https://github.com/MiCa-boards)
+- [https://wiki.openwrt.org/doc/howto/extroot](https://wiki.openwrt.org/doc/howto/extroot)
+- [https://community.onion.io/topic/1569/octoprint-3d-print-server-on-omega2](https://community.onion.io/topic/1569/octoprint-3d-print-server-on-omega2)
