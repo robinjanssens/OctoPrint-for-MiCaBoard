@@ -112,7 +112,8 @@ On Windows I had something like this
 `C:\Users\<yourname>\AppData\Local\Temp\arduino_build_15087\Marlin.ino.hex`.
 
 Send hex file to MiCa board.<br>
-`scp C:\Users\<yourname>\AppData\Local\Temp\arduino_build_15087\Marlin.ino.hex root@<ipadress>:~/marlin.hex`
+`cd C:\Users\<yourname>\AppData\Local\Temp\arduino_build_15087`<br>
+`scp Marlin.ino.hex root@<ipaddress>:~/marlin.hex`
 
 Login and program hex file.<br>
 `ssh root@<ipaddress>`<br>
