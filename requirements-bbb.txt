@@ -1,6 +1,6 @@
 flask>=1.0.0 # >= 1.0.0 to fix CVE-2019-1010083
 werkzeug>=0.15.3 # >= 0.15.3 to fix CVE-2019-14806
-tornado==6.3.3
+tornado==6.4.1
 sockjs-tornado>=1.0.0
 pyyaml>=4.2b1 # >= 4.2b1 to fix CVE-2017-18342
 Flask-Login==0.2.2
